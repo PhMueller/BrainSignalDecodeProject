@@ -233,7 +233,9 @@ class ComposedBenchmark(AbstractBenchmark, metaclass=CustomMetaClass):
     def __init__(
             self,
             data_path: Path,
-            result_path: Path
+            result_path: Path,
+            rng: Union[int, np.random.RandomState, None] = None,
+            **kwargs
     ):
 
         assert self.config_space is not None
@@ -245,7 +247,7 @@ class ComposedBenchmark(AbstractBenchmark, metaclass=CustomMetaClass):
         # assert self.data_manager_type is not None
         # assert self.trainer_type is not None
 
-        super(ComposedBenchmark, self).__init__(rng=0)  # TODO: implement rng
+        super(ComposedBenchmark, self).__init__(rng=rng, **kwargs)  # TODO: implement rng
 
         self.result_path = Path(result_path)
         self.result_path.mkdir(exist_ok=True, parents=True)
@@ -276,6 +278,11 @@ class ComposedBenchmark(AbstractBenchmark, metaclass=CustomMetaClass):
             n_recordings_to_load: Union[int, None] = None,
             **kwargs
     ) -> Dict:
+
+        configuration = AbstractBenchmark._check_and_cast_configuration(
+            configuration, self.get_configuration_space()
+        )
+        configuration = configuration.get_dictionary()
 
         use_cuda = torch.cuda.is_available()
         seed_everything(seed=rng)
@@ -355,14 +362,9 @@ class ComposedBenchmark(AbstractBenchmark, metaclass=CustomMetaClass):
         model_ckpt_prefix = "" if not use_final_eval else "TrainTest_"
         callbacks = [
             CountTrainingTimeCallBack(),
-            PrintCallback(
-                print_validation_message=False,
-                print_every_n_epochs=10 if not debug else DEBUG_SETTINGS['print_epoch'],
-                print_every_n_steps=None if not debug else DEBUG_SETTINGS['print_step']
-            ),
             StopWhenLimitIsReachedCallback(
-                training_time_limit_in_s=fidelity['training_time_in_s'],
-                training_epoch_limit=fidelity['num_epochs'],
+                training_time_limit_in_s=fidelity.get('training_time_in_s', 10000000000),
+                training_epoch_limit=fidelity.get('num_epochs', 10000000000),
                 validate_on_end=False
             ),
             # EarlyStopping(
@@ -370,7 +372,14 @@ class ComposedBenchmark(AbstractBenchmark, metaclass=CustomMetaClass):
             # ),
         ]
 
-        # Disable SWA for the regression task. -> Deepcopy error.
+        if not SHOW_PROGRESSBAR:
+            callbacks.append(PrintCallback(
+                print_validation_message=False,
+                print_every_n_epochs=10 if not debug else DEBUG_SETTINGS['print_epoch'],
+                print_every_n_steps=None if not debug else DEBUG_SETTINGS['print_step']
+            ))
+
+        # Disable SWA for the regression task. -> Deepcopy error. TODO.
         if False and configuration.get('use_stochastic_weight_avg', False):
             callbacks.append(
                 StochasticWeightAveraging(
@@ -382,10 +391,10 @@ class ComposedBenchmark(AbstractBenchmark, metaclass=CustomMetaClass):
 
         if not disable_checkpoints:
             if hasattr(pl_module, 'train_mse_metric'):
-                monitor_metric = 'train_mse_metric'
+                monitor_metric = 'train_mse'
                 monitor_mode = 'min'
             elif hasattr(pl_module, 'train_acc_metric'):
-                monitor_metric = 'train_acc_metric'
+                monitor_metric = 'train_acc'
                 monitor_mode = 'max'
             else:
                 raise ValueError('Unknown pl module. Unclear which metric to montior.')
@@ -422,11 +431,11 @@ class ComposedBenchmark(AbstractBenchmark, metaclass=CustomMetaClass):
             logger=[
                 TensorBoardLogger(
                     save_dir=str(run_result_path / 'tb_logs'),
-                    name=model.__name__,
+                    name=model.__class__.__name__,
                 ),
                 CSVLogger(
                     save_dir=str(run_result_path / 'csv_logs'),
-                    name=model.__name__,
+                    name=model.__class__.__name__,
                 )
             ],
             gradient_clip_val=0.5,
@@ -456,7 +465,7 @@ class ComposedBenchmark(AbstractBenchmark, metaclass=CustomMetaClass):
         trainer.fit(
             model=pl_module,
             train_dataloaders=train_dl,
-            val_dataloaders=valid_dl,
+            val_dataloaders=[valid_dl, train_dl],
         )
 
         if not use_final_eval:

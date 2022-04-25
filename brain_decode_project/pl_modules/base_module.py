@@ -80,6 +80,9 @@ class BaseModule(LightningModule):
                 "ExtendedAdam, ExtendedAdamLookAhead, Ranger."
             )
 
+        # TODO: Add Learning Rate Scheduler to SearchSpace.
+        #   Practical Issue: Large Variance in Training Time. Unclear how to set
+        #   Restart threshold.
         scheduler = CosineAnnealingWarmRestarts(
             optimizer,
             T_0=self.hparams.lr_scheduler_tmax,

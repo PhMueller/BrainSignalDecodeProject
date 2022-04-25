@@ -29,8 +29,8 @@ class PLModule(BaseModule):
         self.test_mse_metric_model = torchmetrics.MeanSquaredError()
 
         self.train_step_metrics.append(self.train_step_mse_metric)
-        self.all_metrics.append([
-            self.train_step_mse_metric,
+        self.all_metrics.extend([
+            # self.train_step_mse_metric,
             self.train_mse_metric, self.train_mse_metric_model,
             self.valid_mse_metric, self.valid_mse_metric_model,
             self.test_mse_metric, self.test_mse_metric_model
@@ -45,11 +45,12 @@ class PLModule(BaseModule):
         y = (y - self.y_mean) / self.y_std
         prediction = self.model(x)
 
+        # Compute the MSE of this particular batch.
         mse = self.train_step_mse_metric(torch.mean(prediction, dim=(1, 2)), y)
 
         self.log(
-            'train_mse', mse.item(),
-            on_step=False, on_epoch=True, prog_bar=True, logger=True
+            'train_mse_step', mse.item(),
+            on_step=True, on_epoch=False, prog_bar=True, logger=True
         )
 
         return mse
@@ -64,7 +65,7 @@ class PLModule(BaseModule):
         if dataset_idx is None or dataset_idx == 0:
             mse_metric, mse_metric_model = self.valid_mse_metric, self.valid_mse_metric_model
         else:
-            mse_metric, mse_metric_model = self.train_mse_metric, self.train_step_mse_metric
+            mse_metric, mse_metric_model = self.train_mse_metric, self.train_mse_metric_model
 
         mse_loss = mse_metric(torch.mean(prediction_norm, dim=(1, 2)), y_norm)
         mse_loss_without_snapshot = mse_metric_model(
@@ -103,10 +104,12 @@ class PLModule(BaseModule):
         }
 
     def training_epoch_end(self, outputs):
+        # Compute the mse across the predictions of the all batches of this epoch!
         self.log(
             'train_mse', self.train_step_mse_metric.compute().item(),
             on_step=False, on_epoch=True, prog_bar=True, logger=True
         )
+        self.train_step_mse_metric.reset()
 
     def _shared_evaluate_method(self, dataset_name, output_per_dataloader):
         # Collect all predictions and combine them.
@@ -123,7 +126,8 @@ class PLModule(BaseModule):
         all_preds = np.array(all_preds)
         all_ys = np.array(all_ys)
 
-        # Limit the values to be in a good range [0, 100]
+        # The Predictions returned by the model are normalized using the mean and variance.
+        # Limit the normalized values to be in a good range [norm(0), norm(100)]
         min_value = (0 - self.y_mean) / self.y_std
         max_value = (100 - self.y_mean) / self.y_std
         all_preds = all_preds.clip(min_value, max_value)
@@ -162,9 +166,9 @@ class PLModule(BaseModule):
                 np.mean(np.abs(self.y_std * (preds_model_trialwise - trial_ys)))
             rmse_model_trialwise_unnormed = np.sqrt(mse_model_trialwise * (self.y_std ** 2))
         else:
-            mse_model_trialwise = -1234
-            mae_model_trialwise_unnormed = -1234
-            rmse_model_trialwise_unnormed = -1234
+            mse_model_trialwise = torch.IntTensor([-1234])
+            mae_model_trialwise_unnormed = torch.IntTensor([-1234])
+            rmse_model_trialwise_unnormed = torch.IntTensor([-1234])
 
         result_dict = {
             f'{dataset_name}_function_value': mse_cropwise.item(),
@@ -215,7 +219,7 @@ class PLModule(BaseModule):
 
         self.log_dict(
             result_dict,
-            on_step=False, on_epoch=True, prog_bar=True, logger=True, add_dataloader_idx=False,
+            on_step=False, on_epoch=True, prog_bar=False, logger=True, add_dataloader_idx=False,
         )
 
         return result_dict

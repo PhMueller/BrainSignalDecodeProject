@@ -1,0 +1,122 @@
+incumbent_cfg:
+  num_channels: 53
+  num_levels: 5
+  kernel_size: 9
+  dropout: 0.0195875974361336
+  batch_size: 28
+  use_augmentation: 0
+  weight_decay: 1.0025958447703478e-07
+  learning_rate: 0.0004732953501425473
+  lr_scheduler_tmax: 100
+  optimizer: ExtendedAdam
+
+runner_example:
+  name: AgeBaselineBenchmark
+  output_dir: /home/philipp/Dokumente/Studium/Masterarbeit/BrainSignalDecodeProject/test_results3
+  data_dir: /media/philipp/Volume/Code/EEG_Data/tuh_eeg_abnormal
+  hb_budget: 3
+  i_cv_folds: 0
+  time_limit_in_s: 300
+  epoch_limit: 10
+  n_recordings_to_load: 300
+  seed: 0
+  run_test: False
+  only_healthy: False
+  skip_training: False
+  load_model: False
+  debug: True
+
+  entry_point: load_yaml
+  yaml_file: /home/philipp/Dokumente/Studium/Masterarbeit/BrainSignalDecodeProject/brain_decode_project/runner/library/AgeBaseline.yaml
+  yaml_key: incumbent_cfg
+
+
+# batch_size, Type: UniformInteger, Range: [1, 512], Default: 64
+# dropout, Type: UniformFloat, Range: [0.0, 0.5], Default: 0.0
+# kernel_size, Type: UniformInteger, Range: [8, 64], Default: 8, on log-scale
+# learning_rate, Type: UniformFloat, Range: [1e-05, 0.1], Default: 0.001, on log-scale
+# lr_scheduler_tmax, Type: UniformInteger, Range: [-1, 1000], Default: -1
+# num_channels, Type: UniformInteger, Range: [16, 512], Default: 64, on log-scale
+# num_levels, Type: UniformInteger, Range: [1, 5], Default: 3
+# optimizer, Type: Constant, Value: ExtendedAdam
+# use_augmentation, Type: UniformInteger, Range: [0, 1], Default: 1
+# weight_decay, Type: UniformFloat, Range: [1e-09, 0.001], Default: 1e-05, on log-scale
+#
+# [experiment]
+# model_class_name: TemporalConvNet
+# reader_class_name: AnomalyDataReader
+# working_dir: /home/chrabasp/EEG_Results_retrain/Age_TCN
+# verbose: 1
+# budget_decoder_class_name: SimpleBudgetDecoder
+# backend: Pytorch
+# is_master: 0
+#
+# [model]
+# num_channels: 53
+# num_levels: 5
+# kernel_size: 9
+# dropout: 0.0195875974361336
+# lasso_selection: 0.0
+# rnn_normalization: none
+# use_context: 0
+# skip_mode: none
+#
+# [data_reader]
+# data_path: /home/chrabasp/data/anomaly_14min_100hz
+# normalization_type: separate
+# readers_count: 3
+# batch_size: 28
+# sequence_size: 1024
+# validation_sequence_size: 84000
+# validation_batch_size: 1
+# balanced: 0
+# random_mode: 2
+# continuous: 1
+# limit_examples: 0
+# limit_duration: 0
+# forget_state: 1
+# label_type: age
+# use_augmentation: 0
+# cv_n: 9
+# cv_k: 8
+# force_parameters: 0
+# train_on_full: 1
+# filter_gender: None
+#
+# [model_trainer]
+# budget: 41800
+# budget_type: iteration
+# metrics_class: MetricsRegression
+# lr: 0.0004732953501425473
+# l2_decay: 1.0722047987073247e-08
+# weight_decay: 1.0025958447703478e-07
+# objective_type: MeanSquaredError_all
+# cosine_decay: 1
+# optimizer: ExtendedAdam
+# metrics_skip_first: 0
+# gradient_clip: 0.25
+# cuda: 1
+#
+# [bayesian_optimizer]
+# config_space_file: config/anomaly_dataset/anomaly_tcn.pcs
+# bo_loss: B_l2_loss_all
+# bo_loss_type: minimize
+# n_iterations: 100
+# eta: 3
+# min_budget: 1.0
+# max_budget: 27
+# nic_name: eth0
+# ping_interval: 10
+# run_id: 0
+#
+# [config_generator]
+# min_points_in_model: 10
+# top_n_percent: 15
+# num_samples: 27
+# random_fraction: 0.2
+# bandwidth_factor: 3
+# min_bandwidth: 0.001
+# bw_estimation_method: normal_reference
+#
+# [train_manager]
+# validation_data_type: test

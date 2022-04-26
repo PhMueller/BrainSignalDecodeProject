@@ -10,7 +10,7 @@ incumbent_cfg:
   lr_scheduler_tmax: 100
   optimizer: ExtendedAdam
 
-runner_example:
+RUN_Baseline:
   name: AgeBaselineBenchmark
   output_dir: /home/philipp/Dokumente/Studium/Masterarbeit/BrainSignalDecodeProject/test_results3
   data_dir: /media/philipp/Volume/Code/EEG_Data/tuh_eeg_abnormal

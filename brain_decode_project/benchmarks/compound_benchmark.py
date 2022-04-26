@@ -220,7 +220,7 @@ class ComposedConfigurationSpace:
 class ComposedBenchmark(AbstractBenchmark, metaclass=CustomMetaClass):
 
     config_space: CS.ConfigurationSpace = None
-    budget_manager_type: BaseBudgetManager = None
+    budget_manager_type: Type[BaseBudgetManager] = None
 
     network_type = None
     lightning_model_type = None
@@ -287,8 +287,9 @@ class ComposedBenchmark(AbstractBenchmark, metaclass=CustomMetaClass):
         use_cuda = torch.cuda.is_available()
         seed_everything(seed=rng)
 
-        # fidelity['num_epochs'] = fidelity.get('num_epochs', fidelity.get('hb_budget'))
-        # fidelity['training_time_in_s'] = 1000000000
+        # Use the Budget Manger to map from hb_budget to (num_epochs, training_time_in_s)
+        budget_manager = self.budget_manager_type()
+        fidelity = budget_manager.get_fidelity_from_hb_budget(fidelity)
 
         if custom_training_time_in_s is not None:
             self.logger.info(f'Set custom training time limit: {custom_training_time_in_s}')
@@ -300,7 +301,7 @@ class ComposedBenchmark(AbstractBenchmark, metaclass=CustomMetaClass):
         result_manager = ResultManager(self.result_path)
         result_manager.update_mapping(configuration, fidelity)
         run_result_path = result_manager.get_run_result_directory(configuration, fidelity)
-        self.logger.info(f'Automatically determined save file: {run_result_path}')
+        self.logger.info(f'Automatically determined save directory: {run_result_path}')
 
         # Checkpoint and Restarting.
         # Step 1: Manually. If the user has specified a custom savefile.
@@ -363,8 +364,8 @@ class ComposedBenchmark(AbstractBenchmark, metaclass=CustomMetaClass):
         callbacks = [
             CountTrainingTimeCallBack(),
             StopWhenLimitIsReachedCallback(
-                training_time_limit_in_s=fidelity.get('training_time_in_s', 10000000000),
-                training_epoch_limit=fidelity.get('num_epochs', 10000000000),
+                training_time_limit_in_s=fidelity['training_time_in_s'],
+                training_epoch_limit=fidelity['num_epochs'],
                 validate_on_end=False
             ),
             # EarlyStopping(
@@ -480,8 +481,7 @@ class ComposedBenchmark(AbstractBenchmark, metaclass=CustomMetaClass):
             )
 
         costs = time() - start_time
-        # TODO: name the index correct.
-        result_manager.register_intermediate_result(results, index=0)
+        result_manager.register_intermediate_result(results, index=fidelity['i_cv_fold'])
 
         final_result = result_manager.register_final_result(
             configuration,

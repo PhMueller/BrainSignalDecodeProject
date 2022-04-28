@@ -4,6 +4,8 @@ template = """#!/bin/bash -l
 #SBATCH -c {cores}
 #SBATCH -t 0:{time}
 #SBATCH --mem {memory}
+{mail_option}
+{signal_option}
 
 echo "Here's what we know from the SLURM environment"
 echo SHELL=$SHELL
@@ -23,7 +25,7 @@ echo Calling: bash -c "$line"                                 #output
 echo "Job started at: `date`"
 
 echo
-echo $line
+echo "$line"
 bash -c "$line"
 echo
 
@@ -53,8 +55,8 @@ if sys.version_info >= (3, 0, 0):
 else:
     from Queue import Queue, Empty
 
-GPU_PARTITIONS = ["alldlc_gpu-rtx2080", "bosch_gpu-rtx2080", "ml_gpu-rtx2080", "ml_gpu-teslaP100", "mlhiwi_gpu-rtx2080",
-                  "mlhiwidlc_gpu-rtx2080", "testdlc_gpu-rtx2080"]
+GPU_PARTITIONS = ["alldlc_gpu-rtx2080", "bosch_gpu-rtx2080", "ml_gpu-rtx2080", "ml_gpu-teslaP100",
+                  "mlhiwi_gpu-rtx2080", "mlhiwidlc_gpu-rtx2080", "testdlc_gpu-rtx2080"]
 CPU_PARTITIONS = ["bosch_cpu-cascadelake", "testbosch_cpu-cascadelake"]
 
 parser = ArgumentParser()
@@ -86,11 +88,24 @@ parser.add_argument("-l", "--logfiles", default=".",
                     help="Output directory of the log files of the job")
 parser.add_argument("--max_running_tasks", default=None, type=int,
                     help="Max number of subjobs that are allowed to run in parallel.")
-parser.add_argument("--memory_per_job", dest="memory", default="4000mb", help="Memory limit per job")
-parser.add_argument('-w', '--nodelist', nargs='+', dest='nodelist', type=str, default=[], required=False,
-                    help='request a specific list of hosts')
-parser.add_argument('-x', '--exclude', nargs='+', dest='exclude', type=str, default=[], required=False,
-                    help='exclude a specific list of hosts')
+parser.add_argument("--qos", dest="qos", default=None,
+                    help="Specifies the qos (-q) option for the srun command")
+parser.add_argument("--memory_per_job", dest="memory", default="4000mb",
+                    help="Memory limit per job")
+parser.add_argument('-w', '--nodelist', nargs='+', dest='nodelist', type=str, default=[],
+                    required=False, help='request a specific list of hosts')
+parser.add_argument('-x', '--exclude', nargs='+', dest='exclude', type=str, default=[],
+                    required=False, help='exclude a specific list of hosts')
+parser.add_argument('--name', type=str, default=None, required=False, help='Job name.')
+parser.add_argument('--no_mail', action='store_true', default=False,
+                    help='Set this flag to deactivate that you receive an email after a job has finished / crashed.')
+parser.add_argument('--signal', type=int, default=None,
+                    help='Send a TERM signal to the job X seconds before the wallclock limit is reached. Default: None (send no signal).')
+parser.add_argument('--dependency_afterok', type=str, default=None,
+                    help='Add the dependency afterok. Run has terminated successfully.')
+parser.add_argument('--dependency_afterany', type=str, default=None,
+                    help='Add the dependency afterany (Successfully or crashed).')
+
 args = parser.parse_args()
 
 out_folder = args.logfiles
@@ -140,6 +155,16 @@ if args.array_max is None:
 else:
     end_array_jobs_at = min(num_jobs, args.array_max)
 
+if args.no_mail:
+    mail_option = ""
+else:
+    mail_option = "#SBATCH --mail-type=END,FAIL"
+
+if args.signal is None:
+    signal_option = '# No signal set.'
+else:
+    signal_option = f'#SBATCH --signal=B:SIGINT@{args.signal}'
+
 # Create the pbs file
 pbs = template.format(**{
     "out_folder": out_folder,
@@ -149,6 +174,8 @@ pbs = template.format(**{
     "startup": startup,
     "shutdown": shutdown,
     "job_file": args.jobfile[0],
+    "mail_option": mail_option,
+    "signal_option": signal_option,
 })
 
 local_time = datetime.datetime.today()
@@ -181,6 +208,9 @@ if not args.local:
     if "bosch" in args.queue:
         submission_command += " --bosch"
 
+    if args.qos is not None:
+        submission_command += " -q %s" % (args.qos)
+
     if len(args.exclude) != 0:
         submission_command += " --exclude="
         submission_command += ','.join(args.exclude)
@@ -188,6 +218,15 @@ if not args.local:
     if len(args.nodelist) != 0:
         submission_command += " --nodelist="
         submission_command += ','.join(args.nodelist)
+
+    if args.name is not None:
+        submission_command += ' --job-name=%s' % (args.name)
+
+    if args.dependency_afterok is not None:
+        submission_command += f' --dependency=afterok:{args.dependency_afterok}'
+
+    if args.dependency_afterany is not None:
+        submission_command += f' --dependency=afterany:{args.dependency_afterany}'
 
     submission_command += " --array={}-{}".format(start_array_jobs_at, end_array_jobs_at)
     if args.max_running_tasks is not None:
@@ -200,7 +239,8 @@ if not args.local:
     if not args.dry_run:
         print(submission_command)
         cmd = submission_prolog + submission_command + submission_epilog
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, executable="/bin/bash")
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True,
+                                executable="/bin/bash")
         stdoutdata, stderrdata = proc.communicate()
         if stdoutdata:
             print(stdoutdata)

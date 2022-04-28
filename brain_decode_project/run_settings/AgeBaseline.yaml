@@ -27,9 +27,29 @@ RUN_Baseline:
   debug: True
 
   entry_point: load_yaml
-  yaml_file: /home/philipp/Dokumente/Studium/Masterarbeit/BrainSignalDecodeProject/brain_decode_project/runner/library/AgeBaseline.yaml
+  yaml_file: /home/philipp/Dokumente/Studium/Masterarbeit/BrainSignalDecodeProject/brain_decode_project/run_settings/AgeBaseline.yaml
   yaml_key: incumbent_cfg
 
+
+RUN_Baseline_Cluster:
+  name: AgeBaselineBenchmark
+  output_dir: /work/dlclarge1/muelleph-bdp/BrainSignalDecodeProject/results/BaselineAge/
+  data_dir: /data/schirrmr/gemeinl/tuh-abnormal-eeg/raw/
+  hb_budget: 3
+  i_cv_folds: 0
+  time_limit_in_s: 3600
+  epoch_limit: 1000
+  n_recordings_to_load: 2993
+  seed: 0
+  run_test: True
+  only_healthy: False
+  skip_training: False
+  load_model: False
+  debug: False
+
+  entry_point: load_yaml
+  yaml_file:   /work/dlclarge1/muelleph-bdp/BrainSignalDecodeProject/brain_decode_project/run_settings/AgeBaseline.yaml
+  yaml_key: incumbent_cfg
 
 # batch_size, Type: UniformInteger, Range: [1, 512], Default: 64
 # dropout, Type: UniformFloat, Range: [0.0, 0.5], Default: 0.0

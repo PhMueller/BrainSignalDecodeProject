@@ -148,11 +148,13 @@ class PrintCallback(Callback):
         self.py_logger.info('Training Start!')
         self.py_logger.info(f'Train:     {len(trainer.train_dataloader)} batches a '
                             f'{trainer.train_dataloader.loaders.batch_size} samples')
-        self.py_logger.info(f'Train Det: {len(trainer.val_dataloaders[0])} batches a '
+        self.py_logger.info(f'Valid:     {len(trainer.val_dataloaders[0])} batches a '
                             f'{trainer.val_dataloaders[0].batch_size} samples')
-        if len(trainer.val_dataloaders) > 1:
-            self.py_logger.info(f'Valid:     {len(trainer.val_dataloaders[1])} batches a '
-                                f'{trainer.val_dataloaders[1].batch_size} samples')
+
+        # if len(trainer.val_dataloaders) > 1:
+            # self.py_logger.info(f'Train Det: {len(trainer.val_dataloaders[0])} batches a '
+            #                     f'{trainer.val_dataloaders[0].batch_size} samples')
+
         self.py_logger.info("Training is started!")
 
     def on_train_end(self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule') -> None:
@@ -169,7 +171,6 @@ class PrintCallback(Callback):
 
     def on_train_batch_start(self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule',
                              batch: Any, batch_idx: int, dataloader_idx: int) -> None:
-        # _logger.debug('PRINTER ON TRAIN BATCH START')
 
         if self.print_every_n_steps is not None \
                 and (pl_module.global_step % self.print_every_n_steps) == 0 \

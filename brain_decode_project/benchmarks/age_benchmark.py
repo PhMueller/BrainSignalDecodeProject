@@ -98,6 +98,37 @@ class AgeBenchmark(ComposedBenchmark):
 if __name__ == '__main__':
     from brain_decode_project import DATA_PATH_LOCAL
 
+    # result_path = Path(
+    #     '/home/philipp/Dokumente/Studium/Masterarbeit/'
+    #     'BrainSignalDecodeProject/test_results'
+    # )
+    # age_b = AgeBenchmark(
+    #     data_path=DATA_PATH_LOCAL,
+    #     result_path=result_path
+    # )
+    #
+    # age_b.objective_function(
+    #     configuration={
+    #         'num_levels': 1,
+    #         'num_channels': 16,
+    #         'kernel_size': 8,
+    #         'dropout': 0.01,
+    #
+    #         'batch_size': 64,
+    #         'learning_rate': 0.01,
+    #         'lr_scheduler_tmax': 614,
+    #
+    #         'optimizer': 'ExtendedAdam',
+    #         'use_stochastic_weight_avg': 0,
+    #         'weight_decay': 1.2111296908674393e-07
+    #     },
+    #     fidelity={
+    #         'num_epochs': 5,
+    #         'training_time_in_s': 500
+    #     },
+    #     n_recordings_to_load=300,
+    # )
+
     result_path = Path(
         '/home/philipp/Dokumente/Studium/Masterarbeit/'
         'BrainSignalDecodeProject/test_results2'

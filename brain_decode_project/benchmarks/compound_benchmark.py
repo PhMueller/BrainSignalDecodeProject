@@ -279,6 +279,13 @@ class ComposedBenchmark(AbstractBenchmark, metaclass=CustomMetaClass):
             **kwargs
     ) -> Dict:
 
+        self.logger.info(
+            f'Objective Function called with: '
+            f'n_recordings_to_load: {n_recordings_to_load}; debug: {debug};'
+            f'use_final_eval: {use_final_eval}; disable_checkpoints: {disable_checkpoints}; '
+            f'custom_checkpoint_dir: {custom_checkpoint_dir}'
+        )
+
         configuration = AbstractBenchmark._check_and_cast_configuration(
             configuration, self.get_configuration_space()
         )

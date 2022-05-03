@@ -1,0 +1,1 @@
+python /work/dlclarge1/muelleph-bdp/BrainSignalDecodeProject/brain_decode_project/runner/run_from_config --yaml /work/dlclarge1/muelleph-bdp/BrainSignalDecodeProject/brain_decode_project/run_settings/AgeBaseline.yaml--run_config RUN_Baseline_Cluster --custom_seed 1

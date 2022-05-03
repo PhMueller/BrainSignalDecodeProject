@@ -1,0 +1,16 @@
+# Get interactive Node
+srun -p ml_gpu-rtx2080 -J braindecode --pty bash
+
+# Run the Baseline
+python /work/dlclarge1/muelleph-bdp/BrainSignalDecodeProject/cluster/slurm_helper.py \
+    -q mlhiwidlc_gpu-rtx2080 --qos dlc-muelleph \
+    --timelimit 86400 \
+    --startup /work/dlclarge1/muelleph-bdp/BrainSignalDecodeProject/cluster/startup.sh \
+    --memory_per_job 60000 \
+    --name age_baseline \
+    --array_min 1 \
+    --array_max 6 \
+    --max_running_tasks 3 \
+    -o /work/dlclarge1/muelleph-bdp/results/age_baseline/opt_logs \
+    -l /work/dlclarge1/muelleph-bdp/results/age_baseline/opt_logs \
+    /work/dlclarge1/muelleph-bdp/BrainSignalDecodeProject/cluster/Baseline.CMD

@@ -86,7 +86,7 @@ class Runner:
         module = __import__('brain_decode_project.benchmarks', fromlist=[args["name"]])
         benchmark_obj = getattr(module, args["name"])
 
-        output_dir = Path(args['output_dir'])
+        output_dir = Path(args['output_dir']) / str(args['seed'])
         data_dir = Path(args['data_dir'])
 
         if args.get('custom_checkpoint', None) is not None:
@@ -168,10 +168,12 @@ class Runner:
                 custom_training_time_in_s=args['time_limit_in_s'],
                 custom_training_epoch_limit=args['epoch_limit'],
                 custom_cv_folds=args['i_cv_folds'],
-                debug=args.get('debug', False),
                 load_model=load_model,
                 skip_training=args['skip_training'],
+                # disable_checkpoints=False,
                 custom_checkpoint_dir=args.get('custom_checkpoint', None),
+                n_recordings_to_load=n_recordings_to_load,
+                debug=args.get('debug', False),
                 **unknown
             )
 

@@ -33,12 +33,12 @@ RUN_Baseline:
 
 RUN_Baseline_Cluster:
   name: AgeBaselineBenchmark
-  output_dir: /work/dlclarge1/muelleph-bdp/BrainSignalDecodeProject/results/BaselineAge/
+  output_dir: /work/dlclarge1/muelleph-bdp/results/age_baseline/
   data_dir: /data/schirrmr/gemeinl/tuh-abnormal-eeg/raw/
   hb_budget: 3
   i_cv_folds: 0
-  time_limit_in_s: 3600
-  epoch_limit: 1000
+  time_limit_in_s: 85800
+  epoch_limit: 1000000000000000
   n_recordings_to_load: 2993
   seed: 0
   run_test: True

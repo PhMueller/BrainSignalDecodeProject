@@ -1,6 +1,6 @@
 from functools import partial
 
-from brain_decode_project.benchmarks.compound_benchmark import ComposedBenchmark, \
+from brain_decode_project.benchmarks.composed_benchmark import ComposedBenchmark, \
     ComposedConfigurationSpace
 from brain_decode_project.data import TUHData
 from brain_decode_project.data.tuh_data import TUHDataSplitter
@@ -37,11 +37,11 @@ class AgeBaselineBenchmark(ComposedBenchmark):
     data_set_type = partial(
         TUHData,
         data_target_name='age',
-        cut_off_first_k_seconds=60,
-        n_max_minutes=2,
+        cut_off_first_k_seconds=2 * 60,
+        n_max_minutes=5,
         sfreq=100,
         rng=0,
-        train_or_eval='train',  # train, eval, both
+        train_or_eval='both',  # train, eval, both
         only_healthy=False,
         standardization_op='exponential_moving_demean',
     )

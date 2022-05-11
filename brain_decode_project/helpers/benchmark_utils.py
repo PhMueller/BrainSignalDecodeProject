@@ -1,5 +1,5 @@
 import logging
-from brain_decode_project.benchmarks.compound_benchmark import ComposedBenchmark
+from brain_decode_project.benchmarks.composed_benchmark import ComposedBenchmark
 from typing import Type
 
 

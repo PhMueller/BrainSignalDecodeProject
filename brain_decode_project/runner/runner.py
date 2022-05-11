@@ -7,7 +7,7 @@ from importlib import import_module
 
 import yaml
 
-from brain_decode_project.benchmarks.compound_benchmark import ComposedBenchmark
+from brain_decode_project.benchmarks.composed_benchmark import ComposedBenchmark
 from brain_decode_project.benchmarks import TUH_DEBUG_SETTINGS, HGD_DEBUG_SETTINGS
 from brain_decode_project.modules.io import transform_unknown_params_to_dict
 
@@ -44,6 +44,7 @@ class Runner:
         parser.add_argument('--only_healthy', action="store_true", default=False)
         parser.add_argument('--skip_training', action="store_true", default=False, required=False)
         parser.add_argument('--load_model', action="store_true", default=False, required=False)
+        parser.add_argument('--disable_checkpoints', action="store_false", default=True, required=False)
         parser.add_argument("--debug", action="store_true", default=False, required=False)
 
         subparsers = parser.add_subparsers(help="Run Network", dest="entry_point")
@@ -170,7 +171,7 @@ class Runner:
                 custom_cv_folds=args['i_cv_folds'],
                 load_model=load_model,
                 skip_training=args['skip_training'],
-                # disable_checkpoints=False,
+                disable_checkpoints=False,
                 custom_checkpoint_dir=args.get('custom_checkpoint', None),
                 n_recordings_to_load=n_recordings_to_load,
                 debug=args.get('debug', False),

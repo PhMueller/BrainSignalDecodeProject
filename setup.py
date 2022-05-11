@@ -22,7 +22,7 @@ setuptools.setup(
     packages=setuptools.find_packages(exclude=['*.tests', '*.tests.*',
                                                'tests.*', 'tests'],),
     package_data={'brain_decode_project': ['runner/library/AgeBaseline.yaml']},
-    python_requires='>3.5, <=3.9',
+    python_requires='>3.5, <=3.10',
     install_requires=read_file('./requirements.txt').split('\n'),
     test_suite='pytest',
     platforms=['Linux'],

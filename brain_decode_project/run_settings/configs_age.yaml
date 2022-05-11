@@ -1,0 +1,12 @@
+baseline_incumbent_cfg:
+  num_channels: 53
+  num_levels: 5
+  kernel_size: 9
+  dropout: 0.0195875974361336
+  batch_size: 28
+  use_augmentation: 0
+  weight_decay: 1.0025958447703478e-07
+  learning_rate: 0.0004732953501425473
+  lr_scheduler_tmax: 100
+  optimizer: ExtendedAdam
+

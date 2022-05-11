@@ -40,14 +40,14 @@ class CountTrainingTimeCallBack(Callback):
         self.epochs_used_for_training += 1
         self.train_epoch_end_time = time()
 
-        pl_module.log_dict({'epoch': self.epochs_used_for_training,
+        pl_module.log_dict({'epoch': float(self.epochs_used_for_training),
                             'start_time_epoch': self.train_epoch_start_time - self.start_time,
                             'finish_time_epoch': self.train_epoch_end_time - self.start_time,
                             'train_time_used': self.time_used_for_training},
                            on_epoch=True, logger=True, prog_bar=False)
 
     def on_train_batch_start(self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule',
-                             batch: Any, batch_idx: int, dataloader_idx: int) -> None:
+                             batch: Any, batch_idx: int, unused: int = 0) -> None:
         # _logger.debug('COUNTER ON TRAIN BATCH START')
 
         self.last_train_batch_start_time = self.train_batch_start_time
@@ -57,7 +57,7 @@ class CountTrainingTimeCallBack(Callback):
     #     _logger.debug('COUNTER ON AFTER BACKWARD')
 
     def on_train_batch_end(self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule', outputs: Any,
-                           batch: Any, batch_idx: int, dataloader_idx: int) -> None:
+                           batch: Any, batch_idx: int, unused: int = 0) -> None:
         # _logger.debug('COUNTER ON TRAIN BATCH END')
         self.train_batch_end_time = time()
         self.time_used_for_training += time() - self.train_batch_start_time
@@ -66,7 +66,7 @@ class CountTrainingTimeCallBack(Callback):
     #     _logger.debug('COUNTER ON BATCH END')
 
     def on_validation_epoch_end(self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule') -> None:
-        pl_module.log_dict({'epoch': self.epochs_used_for_training,
+        pl_module.log_dict({'epoch': float(self.epochs_used_for_training),
                             'start_time_epoch': self.train_epoch_start_time - self.start_time,
                             'finish_time_epoch': self.train_epoch_end_time - self.start_time,
                             'train_time_used': self.time_used_for_training},
@@ -80,9 +80,7 @@ class CountTrainingTimeCallBack(Callback):
         else:
             raise ValueError('We could not find a CountTrainingTimeCallBack. But this callback only works with it')
 
-    def on_save_checkpoint(
-        self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule', checkpoint
-    ) -> dict:
+    def state_dict(self) -> Dict[str, Any]:
         state = dict(start_time=self.start_time,
                      train_epoch_start_time=self.train_epoch_start_time,
                      train_epoch_end_time=self.train_epoch_end_time,
@@ -92,16 +90,14 @@ class CountTrainingTimeCallBack(Callback):
         _logger.debug('Count Training Time: Save checkpoint')
         return state
 
-    def on_load_checkpoint(
-        self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule', callback_state
-    ) -> None:
-        self.start_time = callback_state['start_time']
-        self.train_epoch_start_time = callback_state['train_epoch_start_time']
-        self.train_epoch_end_time = callback_state['train_epoch_end_time']
-        # self.train_batch_start_time = callback_state['train_batch_start_time']
-        self.time_used_for_training = callback_state['time_used_for_training']
-        self.epochs_used_for_training = callback_state['epochs_used_for_training']
-        _logger.debug(f'Count Training Time: Restored checkpoint {callback_state}')
+    def load_state_dict(self, state_dict: Dict[str, Any]) -> None:
+        self.start_time = state_dict['start_time']
+        self.train_epoch_start_time = state_dict['train_epoch_start_time']
+        self.train_epoch_end_time = state_dict['train_epoch_end_time']
+        # self.train_batch_start_time = state_dict['train_batch_start_time']
+        self.time_used_for_training = state_dict['time_used_for_training']
+        self.epochs_used_for_training = state_dict['epochs_used_for_training']
+        _logger.debug(f'Count Training Time: Restored checkpoint {state_dict}')
 
 
 class PrintCallback(Callback):
@@ -170,7 +166,7 @@ class PrintCallback(Callback):
             self.last_epoch_printed = pl_module.current_epoch
 
     def on_train_batch_start(self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule',
-                             batch: Any, batch_idx: int, dataloader_idx: int) -> None:
+                             batch: Any, batch_idx: int,  unused: int = 0) -> None:
 
         if self.print_every_n_steps is not None \
                 and (pl_module.global_step % self.print_every_n_steps) == 0 \
@@ -188,16 +184,16 @@ class PrintCallback(Callback):
         if self.print_validation_message:
             self.py_logger.info('Valdiation Finished!')
 
-    def on_save_checkpoint(self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule', checkpoint) -> dict:
+    def state_dict(self) -> Dict[str, Any]:
         state = dict(last_epoch_printed=self.last_epoch_printed,
                      last_step_printed=self.last_step_printed)
         self.py_logger.debug('Save checkpoint')
         return state
 
-    def on_load_checkpoint(self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule', callback_state) -> None:
-        self.last_epoch_printed = callback_state['last_epoch_printed']
-        self.last_step_printed = callback_state['last_step_printed']
-        self.py_logger.debug(f'Restored checkpoint {callback_state}')
+    def load_state_dict(self, state_dict: Dict[str, Any]) -> None:
+        self.last_epoch_printed = state_dict['last_epoch_printed']
+        self.last_step_printed = state_dict['last_step_printed']
+        self.py_logger.debug(f'Restored checkpoint {state_dict}')
 
 
 class StopWhenLimitIsReachedCallback(Callback):
@@ -229,14 +225,14 @@ class StopWhenLimitIsReachedCallback(Callback):
             trainer.should_stop = True
 
     def on_train_batch_start(self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule',
-                             batch: Any, batch_idx: int, dataloader_idx: int) -> Union[int, None]:
+                             batch: Any, batch_idx: int, unused: int = 0) -> Union[int, None]:
         # _logger.debug('STOPPER ON TRAIN BATCH START')
 
         if self.limit_reached:
             if self.validate_on_end:
                 self.py_logger.info('Validate before stopping the training.')
                 old_device = trainer.model.device
-                trainer.validate(model=trainer.model, val_dataloaders=trainer.val_dataloaders, verbose=False)
+                trainer.validate(model=trainer.model, dataloaders=trainer.val_dataloaders, verbose=False)
                 trainer.model.to(torch.device(old_device))
             trainer.should_stop = True
 
@@ -275,7 +271,7 @@ class ValidateByTimeCallback(Callback):
         self.last_validation = 0
 
     def on_train_batch_end(self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule', outputs: Any, batch: Any,
-                           batch_idx: int, dataloader_idx: int) -> None:
+                           batch_idx: int, unused: int = 0) -> None:
 
         # def on_treain_batch_end(self,  trainer: 'pl.Trainer', pl_module: 'pl.LightningModule'):
         counter = CountTrainingTimeCallBack.retrieve_callback_from_list(trainer.callbacks)
@@ -286,17 +282,17 @@ class ValidateByTimeCallback(Callback):
                                  f'Last validation was: {self.last_validation:.2f}s')
             old_device = trainer.model.device
             self.last_validation = counter.time_used_for_training
-            trainer.validate(model=trainer.model, val_dataloaders=trainer.val_dataloaders, verbose=False)
+            trainer.validate(model=trainer.model, dataloaders=trainer.val_dataloaders, verbose=False)
             trainer.model.to(torch.device(old_device))
 
-    def on_save_checkpoint(self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule', checkpoint) -> dict:
+    def state_dict(self) -> Dict[str, Any]:
         state = dict(last_validation=self.last_validation)
         self.py_logger.debug('Save checkpoint')
         return state
 
-    def on_load_checkpoint(self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule', callback_state) -> None:
-        self.last_validation = callback_state['last_validation']
-        self.py_logger.debug(f'Restored checkpoint {callback_state}')
+    def load_state_dict(self, state_dict: Dict[str, Any]) -> None:
+        self.last_validation = state_dict['last_validation']
+        self.py_logger.debug(f'Restored checkpoint {state_dict}')
 
 
 class CheckpointEveryNSteps(pl.Callback):
@@ -392,9 +388,7 @@ class SaveSnapshotCallback(Callback):
         # Increase the snapshot number
         self.snapshot_number = (self.snapshot_number + 1) % self.ensemble_size
 
-    def on_save_checkpoint(
-            self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule', checkpoint
-    ) -> dict:
+    def state_dict(self) -> Dict[str, Any]:
         """
         Define how to store this callback in a checkpoint.
         """
@@ -407,20 +401,18 @@ class SaveSnapshotCallback(Callback):
         self.py_logger.debug('Save checkpoint')
         return state
 
-    def on_load_checkpoint(
-            self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule', callback_state
-    ) -> None:
+    def load_state_dict(self, state_dict: Dict[str, Any]) -> None:
         """
         Define how to reload the callback from a checkpoint.
         """
-        self.snapshot_number = callback_state['snapshot_number']
-        self.snapshot_dir = callback_state['snapshot_dir']
-        self.enable_snapshots = callback_state['enable_snapshots']
-        self.hashed_config_fidelity = callback_state['hashed_config_fidelity']
+        self.snapshot_number = state_dict['snapshot_number']
+        self.snapshot_dir = state_dict['snapshot_dir']
+        self.enable_snapshots = state_dict['enable_snapshots']
+        self.hashed_config_fidelity = state_dict['hashed_config_fidelity']
 
         self.snapshot_dir.mkdir(exist_ok=True, parents=True)
 
-        self.py_logger.debug(f'Restored checkpoint {callback_state}')
+        self.py_logger.debug(f'Restored checkpoint {state_dict}')
 
     def get_file_path(self, snapshot_number: int) -> Path:
         """ Getter: Get path of the snapshot identified by the snapshot number. """

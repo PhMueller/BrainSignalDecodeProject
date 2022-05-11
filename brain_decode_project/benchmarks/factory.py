@@ -3,7 +3,7 @@ from functools import partial
 import ConfigSpace as CS
 from braindecode.models import TCN
 
-from brain_decode_project.benchmarks.compound_benchmark import ComposedConfigurationSpace, \
+from brain_decode_project.benchmarks.composed_benchmark import ComposedConfigurationSpace, \
     ComposedBenchmark
 from brain_decode_project.data import TUHData
 from brain_decode_project.data.tuh_data import TUHDataSplitter

@@ -311,23 +311,6 @@ class ComposedBenchmark(AbstractBenchmark, metaclass=CustomMetaClass):
         run_result_path = result_manager.get_run_result_directory(configuration, fidelity)
         self.logger.info(f'Automatically determined save directory: {run_result_path}')
 
-        # Checkpoint and Restarting.
-        # Step 1: Manually. If the user has specified a custom savefile.
-        #         Then, save results to hash(config, fidelity)
-        assert custom_checkpoint_dir is None \
-            or (isinstance(custom_checkpoint_dir, Path) and custom_checkpoint_dir.is_file()), \
-            'The checkpoint (if given) has to point to a .ckpt file but was ' \
-            f'{custom_checkpoint_dir}'
-
-        # Step 2: Automatically. If there exists a checkpoint at (config, fidelity) use that one
-        last_checkpoint_file = run_result_path / 'checkpoints' / 'last.ckpt'
-        if not disable_checkpoints \
-                and custom_checkpoint_dir is None \
-                and last_checkpoint_file.exists():
-            # If a checkpoint file exists, continue from it.
-            self.logger.info(f'Start fom last checkpoint {last_checkpoint_file}')
-            custom_checkpoint_dir = last_checkpoint_file
-
         # Create the data set. This might take a while. This step solely contains loading the
         # braindecode data set
         dataset = self.data_set_type(
@@ -349,13 +332,15 @@ class ComposedBenchmark(AbstractBenchmark, metaclass=CustomMetaClass):
             self.data_set_splitter_type.keywords['input_window_samples']
         )
         n_preds_per_input = output_shape[2]
-
+        
+        # ---------------------------- INIT DATA SET -------------------------------------------------------------------
         dataset_splitter = self.data_set_splitter_type(window_stride_samples=n_preds_per_input)
         train_set, valid_set = dataset_splitter.split_into_train_valid(dataset)
 
         train_dl = DataLoader(train_set, batch_size=configuration['batch_size'], drop_last=True)
         valid_dl = DataLoader(valid_set, batch_size=configuration['batch_size'], drop_last=False)
-
+        
+        # ---------------------------- INIT MODEL ----------------------------------------------------------------------
         # Set automatically the length for the LR restart cycle to the maximum number of epochs.
         if configuration.get('lr_scheduler_tmax', -1) == -1:
             configuration['lr_scheduler_tmax'] = fidelity['num_epochs']
@@ -368,7 +353,6 @@ class ComposedBenchmark(AbstractBenchmark, metaclass=CustomMetaClass):
             y_std=dataset.y_std,
         )
 
-        model_ckpt_prefix = "" if not use_final_eval else "TrainTest_"
         callbacks = [
             CountTrainingTimeCallBack(),
             StopWhenLimitIsReachedCallback(
@@ -397,7 +381,27 @@ class ComposedBenchmark(AbstractBenchmark, metaclass=CustomMetaClass):
                     device=None
                 )
             )
+        
+        # ---------------------------- Checkpoint and Restarting -------------------------------------------------------
+        # Step 1: Manually. Check that the specified custom checkpoint is a path object and links to an existing 
+        #         ckpoint. 
+        assert custom_checkpoint_dir is None \
+            or (isinstance(custom_checkpoint_dir, Path) and custom_checkpoint_dir.is_file()), \
+            'The checkpoint (if given) has to point to a .ckpt file but was ' \
+            f'{custom_checkpoint_dir}'
 
+        # Step 2: Automatically. If there exists a checkpoint at (config, fidelity) and no custom file is given, 
+        #         use last saved checkpoint.
+        last_checkpoint_file = run_result_path / 'checkpoints' / 'last.ckpt'
+        if not disable_checkpoints \
+                and custom_checkpoint_dir is None \
+                and last_checkpoint_file.exists():
+            self.logger.info(f'Start fom last checkpoint {last_checkpoint_file}')
+            custom_checkpoint_dir = last_checkpoint_file
+        
+        # Add the model checkpoint callback. Observe the epoch-wise train metric. Save the model 
+        # every time a validation was performed. 
+        # This corresponds to the `check_val_every_n_epochs` of the trainer. 
         if not disable_checkpoints:
             if hasattr(pl_module, 'train_mse_metric'):
                 monitor_metric = 'train_mse'
@@ -407,18 +411,19 @@ class ComposedBenchmark(AbstractBenchmark, metaclass=CustomMetaClass):
                 monitor_mode = 'max'
             else:
                 raise ValueError('Unknown pl module. Unclear which metric to montior.')
-
+            
             callbacks.append(
                 ModelCheckpoint(
                     monitor=monitor_metric,
-                    filename=model_ckpt_prefix + 'best',
+                    filename="best" if not use_final_eval else "TrainTest_best",
                     dirpath=run_result_path / 'checkpoints',
                     mode=monitor_mode,
                     save_last=True,
                     save_top_k=2,
                 )
             )
-
+            
+            # Add a callback for managing the snapshots
             if self.use_augmentations:
                 callbacks.append(
                     SaveSnapshotCallback(
@@ -428,13 +433,15 @@ class ComposedBenchmark(AbstractBenchmark, metaclass=CustomMetaClass):
                     )
                 )
 
+        # ---------------------------- INIT TRAINER --------------------------------------------------------------------
         trainer = Trainer(
             gpus=1 if use_cuda else 0,
             benchmark=True,
             deterministic=True,
             max_epochs=fidelity['num_epochs'],
+
             check_val_every_n_epoch=5,
-            checkpoint_callback=not disable_checkpoints,
+            enable_checkpointing=not disable_checkpoints,
             default_root_dir=str(run_result_path),
             callbacks=callbacks,
             logger=[
@@ -445,14 +452,12 @@ class ComposedBenchmark(AbstractBenchmark, metaclass=CustomMetaClass):
                 CSVLogger(
                     save_dir=str(run_result_path / 'csv_logs'),
                     name=model.__class__.__name__,
+                    flush_logs_every_n_steps=10,
                 )
             ],
             gradient_clip_val=0.5,
             gradient_clip_algorithm='norm',
-            resume_from_checkpoint=custom_checkpoint_dir if load_model else None,
-            progress_bar_refresh_rate=SHOW_PROGRESSBAR,
-            # log_every_n_steps=10,
-            flush_logs_every_n_steps=10,
+            enable_progress_bar=SHOW_PROGRESSBAR,
         )
 
         # Problems with the stochastic Weight Averaging:
@@ -469,14 +474,17 @@ class ComposedBenchmark(AbstractBenchmark, metaclass=CustomMetaClass):
                 swa_start_epoch = int(trainer.max_epochs * swa_start_epoch)
             swa_callback._swa_epoch_start = max(old_state['epoch'], swa_start_epoch) + 1
 
+        # ---------------------------- RUN TRAINING --------------------------------------------------------------------
         start_time = time()
 
         trainer.fit(
             model=pl_module,
             train_dataloaders=train_dl,
             val_dataloaders=[valid_dl, train_dl],
+            ckpt_path=custom_checkpoint_dir if load_model else None,
         )
 
+        # ---------------------------- RUN VALIDATION STEP -------------------------------------------------------------
         if not use_final_eval:
             results = trainer.validate(
                 model=pl_module,

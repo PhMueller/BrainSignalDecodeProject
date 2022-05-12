@@ -93,7 +93,7 @@ class Runner:
         if args.get('custom_checkpoint', None) is not None:
             args['custom_checkpoint'] = Path(args['custom_checkpoint'])
 
-        load_model = load_model or args['load_model']
+        load_model = args.get('load_model', True)
 
         # ------------------------ Load Configurations -------------------------------------------
         # Depending on the passed arguments

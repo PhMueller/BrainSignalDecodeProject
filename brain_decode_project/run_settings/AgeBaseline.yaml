@@ -1,18 +1,19 @@
 RUN_Baseline:
   name: AgeBaselineBenchmark
-  output_dir: /home/lmmista-wap072/Dokumente/Code/BrainSignalResults/test_1
+  output_dir: /home/lmmista-wap072/Dokumente/Code/BrainSignalResults/age_baseline3
   data_dir: /home/lmmista-wap072/Dokumente/Code/BrainSignalDecodeProject/data/tuh_eeg_abnormal
   hb_budget: 3
   i_cv_folds: 0
-  time_limit_in_s: 500
-  epoch_limit: 10
-  n_recordings_to_load: 190
+  time_limit_in_s: 85800
+  epoch_limit: 1000000000000000
+  n_recordings_to_load: 300
   seed: 0
   run_test: False
   only_healthy: False
   skip_training: False
-  load_model: False
+  load_model: True
   disable_checkpoints: False
+  # custom_checkpoint: /home/lmmista-wap072/Dokumente/Code/BrainSignalResults/age_baseline2/0/intermediate_results/fc8fe5b96585ca636c3755a660a27a71/checkpoints/last.ckpt
   debug: True
 
   entry_point: load_yaml

@@ -29,5 +29,4 @@ if __name__ == '__main__':
     runner.run(
         args=run_args[args.run_config],
         unknown={},
-        load_model=run_args[args.run_config]['load_model']
     )

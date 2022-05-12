@@ -220,7 +220,7 @@ class StopWhenLimitIsReachedCallback(Callback):
         self.validate_on_end = validate_on_end
         self.limit_reached = False
 
-    def on_epoch_start(self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule') -> None:
+    def on_train_epoch_start(self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule') -> None:
         if self.limit_reached:
             trainer.should_stop = True
 

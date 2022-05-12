@@ -273,6 +273,7 @@ class ComposedBenchmark(AbstractBenchmark, metaclass=CustomMetaClass):
             rng: Union[np.random.RandomState, int, None] = None,
             use_final_eval: Union[bool, None] = False,
             disable_checkpoints: bool = True,
+            load_model: bool = True,
             custom_checkpoint_dir: Union[None, Path] = None,
             debug: bool = False,
             n_recordings_to_load: Union[int, None] = None,
@@ -448,7 +449,7 @@ class ComposedBenchmark(AbstractBenchmark, metaclass=CustomMetaClass):
             ],
             gradient_clip_val=0.5,
             gradient_clip_algorithm='norm',
-            resume_from_checkpoint=custom_checkpoint_dir,
+            resume_from_checkpoint=custom_checkpoint_dir if load_model else None,
             progress_bar_refresh_rate=SHOW_PROGRESSBAR,
             # log_every_n_steps=10,
             flush_logs_every_n_steps=10,
@@ -504,20 +505,16 @@ class ComposedBenchmark(AbstractBenchmark, metaclass=CustomMetaClass):
         self,
         configuration: Union[CS.Configuration, Dict],
         fidelity: Union[Dict, CS.Configuration, None] = None,
-
         custom_training_time_in_s: Union[int, None] = None,
         custom_training_epoch_limit: Union[int, None] = None,
-
         rng: Union[np.random.RandomState, int, None] = None,
-
         use_final_eval: Union[bool, None] = False,
         disable_checkpoints: bool = True,
+        load_model: bool = True,
         custom_checkpoint_dir: Union[None, Path] = None,
         debug: bool = False,
         n_recordings_to_load: Union[int, None] = None,
-
         ** kwargs
-
     ) -> Dict:
 
         return self.objective_function(

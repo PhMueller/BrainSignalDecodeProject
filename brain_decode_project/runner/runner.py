@@ -43,7 +43,7 @@ class Runner:
         parser.add_argument('--run_test', action="store_true", default=False, required=False)
         parser.add_argument('--only_healthy', action="store_true", default=False)
         parser.add_argument('--skip_training', action="store_true", default=False, required=False)
-        parser.add_argument('--load_model', action="store_true", default=False, required=False)
+        parser.add_argument('--load_model', action="store_true", default=True, required=False)
         parser.add_argument('--disable_checkpoints', action="store_false", default=True, required=False)
         parser.add_argument("--debug", action="store_true", default=False, required=False)
 
@@ -79,7 +79,7 @@ class Runner:
             configs = yaml.load(fh, Loader=yaml.FullLoader)
         return configs
 
-    def run(self, args, unknown, load_model: bool = False) -> None:
+    def run(self, args, unknown) -> None:
 
         logger.info(f'Start Benchmark: {args["name"]}')
 
@@ -182,7 +182,7 @@ class Runner:
 def main():
     runner = Runner()
     args, unknown = runner.parse_args()
-    runner.run(args=args, unknown=unknown, load_model=False)
+    runner.run(args=args, unknown=unknown)
 
 
 if __name__ == '__main__':

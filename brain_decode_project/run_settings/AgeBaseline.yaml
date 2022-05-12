@@ -33,7 +33,7 @@ RUN_Baseline_Cluster:
   run_test: True
   only_healthy: False
   skip_training: False
-  load_model: False
+  load_model: True
   disable_checkpoints: False
   debug: False
 

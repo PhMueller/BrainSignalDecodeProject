@@ -7,6 +7,6 @@ baseline_incumbent_cfg:
   use_augmentation: 0
   weight_decay: 1.0025958447703478e-07
   learning_rate: 0.0004732953501425473
-  lr_scheduler_tmax: 100
+  lr_scheduler_tmax: 100  # TODO: Set to -1?
   optimizer: ExtendedAdam
 

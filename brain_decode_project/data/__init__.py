@@ -39,6 +39,6 @@ mne_logger = logging.getLogger('mne')
 mne_logger.setLevel(logging.WARNING)
 
 from brain_decode_project.data.hgd_data import HighGammaData, HighGammaDataAllChannels
-from brain_decode_project.data.tuh_data import TUHData
+from brain_decode_project.data.tuh_data import TUHData, TUHDataSplitter
 
-__all__ = ['TUHData', 'HighGammaData', 'HighGammaDataAllChannels']
+__all__ = ['TUHData', 'TUHDataSplitter', 'HighGammaData', 'HighGammaDataAllChannels']

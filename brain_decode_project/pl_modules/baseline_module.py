@@ -84,7 +84,7 @@ class BaselineRegressionPLModule(RegressionBase):
             CS.UniformIntegerHyperparameter(
                 'use_augmentation', lower=0, upper=1, default_value=1, log=False,
             ),
-            # That was not included in Patryks Search Space.
+            # That was not included in Patryks Search Space. The augmentation is performed a single time.
             # CS.UniformFloatHyperparameter(
             #     'prob_gaussian_noise', lower=0.0, upper=0.5, default_value=0.0, log=True
             # ),

@@ -420,6 +420,7 @@ class ComposedBenchmark(AbstractBenchmark, metaclass=CustomMetaClass):
                     mode=monitor_mode,
                     save_last=True,
                     save_top_k=2,
+                    save_on_train_epoch_end=True,
                 )
             )
             

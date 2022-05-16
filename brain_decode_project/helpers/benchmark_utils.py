@@ -4,6 +4,9 @@ from typing import Type
 
 
 def get_available_benchmarks():
+    """
+    This function crawls the implemented Benchmark classes from the folder .benchmarks
+    """
     import inspect
     import brain_decode_project.benchmarks
     cls_members = inspect.getmembers(brain_decode_project.benchmarks, inspect.isclass)
@@ -11,6 +14,9 @@ def get_available_benchmarks():
 
 
 def is_benchmark_available(benchmark_name):
+    """
+    Get all available benchmarks and test if the presented value is present.
+    """
     cls_names = get_available_benchmarks()
     is_available = benchmark_name in cls_names
     if not is_available:

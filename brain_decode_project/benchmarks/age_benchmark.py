@@ -43,6 +43,54 @@ class AgeBaselineBenchmark(ComposedBenchmark):
         rng=0,
         train_or_eval='both',  # train, eval, both
         only_healthy=False,
+        standardization_op='exponential_moving_standardize',
+    )
+
+    # Split the train data into 80% train and 20% validation.
+    # or if called with objective_function_test: Use the entire train data set for training and
+    # the extra test data set for testing.
+    data_set_splitter_type = partial(
+        TUHDataSplitter,
+        input_window_samples=1600
+    )
+
+
+class AgeSmallSearchSpaceBenchmark(ComposedBenchmark):
+
+    config_space = ComposedConfigurationSpace(
+        configuration_spaces=[
+            RegressionModule.get_configuration_space(seed=0),
+            TCNSearchSpace.get_configuration_space(seed=0)
+        ],
+        replace_hp_mapping={
+            'lr_scheduler_tmax': 1000,
+            'optimizer': 'ExtendedAdam',
+
+            'batch_size': 64,
+            'kernel_size': 32,
+            'num_channels': 32,
+            'num_levels': 2,
+        },
+    )
+    budget_manager_type = DummyBudgetManager
+
+    network_type = partial(
+        TCN,
+        n_outputs=1,
+        add_log_softmax=False,
+    )
+
+    lightning_model_type = RegressionModule
+
+    data_set_type = partial(
+        TUHData,
+        data_target_name='age',
+        cut_off_first_k_seconds=3 * 60,
+        n_max_minutes=5 * 60,
+        sfreq=100,
+        rng=0,
+        train_or_eval='both',  # train, eval, both
+        only_healthy=False,
         standardization_op='exponential_moving_demean',
     )
 
@@ -53,6 +101,8 @@ class AgeBaselineBenchmark(ComposedBenchmark):
         TUHDataSplitter,
         input_window_samples=1600
     )
+
+    use_augmentations = False
 
 
 class AgeBenchmark(ComposedBenchmark):
